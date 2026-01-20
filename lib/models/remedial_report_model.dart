@@ -1,24 +1,28 @@
 class RemedialReport {
   final int? id;
 
-  final String namaRemedial;
+  // 🔑 IDENTITAS
+  final String namaRemedial; // petugas / user
   final String namaNasabah;
-  // final String usaha;
+
+  // 📄 DATA NASABAH
   final String alamat;
   final String nominal;
   final String status;
   final String produk;
   final String hasil;
 
+  // 🗓 TANGGAL
   final DateTime tanggalLaporan;
   final DateTime? rencanaKunjungan;
+
+  // 📷 FOTO
   final String? fotoPath;
 
   RemedialReport({
     this.id,
     required this.namaRemedial,
     required this.namaNasabah,
-    // required this.usaha,
     required this.alamat,
     required this.nominal,
     required this.status,
@@ -34,10 +38,9 @@ class RemedialReport {
   // ======================
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
+      'id': id,
       'namaRemedial': namaRemedial,
       'namaNasabah': namaNasabah,
-      // 'usaha': usaha,
       'alamat': alamat,
       'nominal': nominal,
       'status': status,
@@ -57,7 +60,6 @@ class RemedialReport {
       id: map['id'] as int?,
       namaRemedial: map['namaRemedial'] ?? '',
       namaNasabah: map['namaNasabah'] ?? '',
-      // usaha: map['usaha'] ?? '',
       alamat: map['alamat'] ?? '',
       nominal: map['nominal'] ?? '',
       status: map['status'] ?? '',

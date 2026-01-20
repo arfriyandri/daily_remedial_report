@@ -7,11 +7,13 @@ import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'remedial_form_page.dart';
 import 'remedial_edit_page.dart';
 
 import '../models/remedial_report_model.dart';
 import '../services/db_helper.dart';
+import '../services/excel_import_service.dart';
 
 class RemedialListPage extends StatefulWidget {
   const RemedialListPage({super.key});
@@ -89,7 +91,6 @@ class _RemedialListPageState extends State<RemedialListPage> {
       final headers = [
         'No',
         'Nama Nasabah',
-        'Usaha',
         'Alamat',
         'Nominal',
         'Status',
@@ -120,10 +121,6 @@ class _RemedialListPageState extends State<RemedialListPage> {
         sheet.getRangeByIndex(row, 2)
           ..setText(e.namaNasabah)
           ..cellStyle = cellStyle;
-
-        // sheet.getRangeByIndex(row, 3)
-        //   ..setText(e.usaha)
-        //   ..cellStyle = cellStyle;
 
         sheet.getRangeByIndex(row, 3)
           ..setText(e.alamat)
@@ -248,6 +245,25 @@ class _RemedialListPageState extends State<RemedialListPage> {
               PopupMenuItem(value: 'share', child: Text('Share Excel')),
             ],
           ),
+          IconButton(
+            icon: const Icon(Icons.upload_file),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              final namaRemedial =
+                  prefs.getString('nama_remedial') ?? 'Unknown';
+
+              final total = await ExcelImportService.importRemedialExcel(
+                namaRemedial: namaRemedial,
+              );
+
+              if (total > 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Berhasil import $total data')),
+                );
+                loadData();
+              }
+            },
+          ),
         ],
       ),
       body: Builder(
@@ -313,7 +329,8 @@ class _RemedialListPageState extends State<RemedialListPage> {
                                 final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => RemedialEditPage(data: data),
+                                    builder: (_) =>
+                                        RemedialEditPage(data: data),
                                   ),
                                 );
 

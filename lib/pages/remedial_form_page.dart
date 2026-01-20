@@ -7,12 +7,12 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/remedial_report_model.dart';
+import '../models/master_nasabah_model.dart';
 import '../services/db_helper.dart';
 import 'remedial_list_page.dart';
 
 class RemedialFormPage extends StatefulWidget {
-  final RemedialReport? editData;
-  const RemedialFormPage({super.key, this.editData});
+  const RemedialFormPage({super.key});
 
   @override
   State<RemedialFormPage> createState() => _RemedialFormPageState();
@@ -20,13 +20,12 @@ class RemedialFormPage extends StatefulWidget {
 
 class _RemedialFormPageState extends State<RemedialFormPage> {
   final namaController = TextEditingController();
-  final usahaController = TextEditingController();
   final alamatController = TextEditingController();
   final nominalController = TextEditingController();
   final hasilController = TextEditingController();
+  final produkController = TextEditingController();
 
   String statusValue = 'New';
-  final produkController = TextEditingController();
   DateTime? rencanaKunjungan;
 
   File? foto;
@@ -35,9 +34,7 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
   // =====================
   // SIMPAN FOTO PERMANEN
   // =====================
-  Future<String?> simpanFotoPermanen(File? foto) async {
-    if (foto == null) return null;
-
+  Future<String?> simpanFotoPermanen(File foto) async {
     final dir = await getApplicationDocumentsDirectory();
     final fileName =
         'foto_${DateTime.now().millisecondsSinceEpoch}${p.extension(foto.path)}';
@@ -67,115 +64,45 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
   }
 
   // =====================
-  // SUBMIT DATA
+  // SUBMIT DATA (INSERT)
   // =====================
   Future<void> submitReport() async {
-    debugPrint('➡️ SUBMIT START');
-
-    try {
-      if (namaController.text.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nama Nasabah wajib diisi')),
-        );
-        return;
-      }
-
-      final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return;
-
-      final namaRemedial = prefs.getString('nama_remedial') ?? 'Unknown';
-
-      String? fotoPath;
-      if (foto != null) {
-        fotoPath = await simpanFotoPermanen(foto);
-        if (!mounted) return;
-      }
-
-      final report = RemedialReport(
-        id: widget.editData?.id,
-        namaRemedial: namaRemedial,
-        namaNasabah: namaController.text,
-        // usaha: usahaController.text,
-        alamat: alamatController.text,
-        nominal: nominalController.text,
-        status: statusValue,
-        produk: produkController.text,
-        hasil: hasilController.text,
-        tanggalLaporan: widget.editData?.tanggalLaporan ?? DateTime.now(),
-        rencanaKunjungan: rencanaKunjungan,
-        fotoPath: fotoPath,
-      );
-
-      if (widget.editData == null) {
-        await DBHelper.insert(report);
-      } else {
-        await DBHelper.update(report);
-      }
-
-      if (!mounted) return;
-
+    if (namaController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RemedialListPage()),
-      );
-
-      debugPrint('✅ SUBMIT DONE');
-    } catch (e, s) {
-      debugPrint('❌ ERROR SUBMIT: $e');
-      debugPrint('$s');
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('ERROR: $e')));
+      ).showSnackBar(const SnackBar(content: Text('Nama Nasabah wajib diisi')));
+      return;
     }
-  }
 
-  void resetForm() {
-    namaController.clear();
-    // usahaController.clear();
-    alamatController.clear();
-    nominalController.clear();
-    hasilController.clear();
-    produkController.clear();
+    final prefs = await SharedPreferences.getInstance();
+    final namaRemedial = prefs.getString('nama_remedial') ?? 'Unknown';
 
-    setState(() {
-      statusValue = 'New';
-      rencanaKunjungan = null;
-      foto = null;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.editData != null) {
-      final data = widget.editData!;
-      namaController.text = data.namaNasabah;
-      // usahaController.text = data.usaha;
-      alamatController.text = data.alamat;
-      nominalController.text = data.nominal;
-      hasilController.text = data.hasil;
-      statusValue = data.status;
-      produkController.text = data.produk;
-      rencanaKunjungan = data.rencanaKunjungan;
-
-      if (data.fotoPath != null) {
-        foto = File(data.fotoPath!);
-      }
+    String? fotoPath;
+    if (foto != null) {
+      fotoPath = await simpanFotoPermanen(foto!);
     }
-  }
 
-  void bukaList() {
-    Navigator.push(
+    final report = RemedialReport(
+      namaRemedial: namaRemedial,
+      namaNasabah: namaController.text,
+      alamat: alamatController.text,
+      nominal: nominalController.text,
+      status: statusValue,
+      produk: produkController.text,
+      hasil: hasilController.text,
+      rencanaKunjungan: rencanaKunjungan,
+      fotoPath: fotoPath,
+    );
+
+    await DBHelper.insert(report);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const RemedialListPage()),
     );
@@ -183,34 +110,50 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = widget.editData != null;
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Remedial Report' : 'Tambah Remedial Report'),
-        actions: [
-          IconButton(icon: const Icon(Icons.list), onPressed: bukaList),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Tambah Remedial Report')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
-              controller: namaController,
-              decoration: const InputDecoration(labelText: 'Nama Nasabah'),
+            // =========================
+            // 🔍 AUTOCOMPLETE NASABAH
+            // =========================
+            Autocomplete<MasterNasabah>(
+              displayStringForOption: (e) => e.nama,
+              optionsBuilder: (value) async {
+                if (value.text.length < 2) {
+                  return const Iterable<MasterNasabah>.empty();
+                }
+                return await DBHelper.searchNasabah(value.text);
+              },
+              onSelected: (selected) {
+                namaController.text = selected.nama;
+                alamatController.text = selected.alamat;
+                nominalController.text = selected.nominal;
+                produkController.text = selected.produk;
+              },
+              fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Nasabah',
+                    border: OutlineInputBorder(),
+                    hintText: 'Cari atau input manual',
+                  ),
+                  onChanged: (v) => namaController.text = v,
+                );
+              },
             ),
-            const SizedBox(height: 10),
-            // TextField(
-            //   controller: usahaController,
-            //   decoration: const InputDecoration(labelText: 'Usaha'),
-            // ),
-            // const SizedBox(height: 10),
+
+            const SizedBox(height: 12),
             TextField(
               controller: alamatController,
               decoration: const InputDecoration(labelText: 'Alamat'),
             ),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 12),
             DropdownButtonFormField(
               value: statusValue,
               items: const [
@@ -222,34 +165,23 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
               decoration: const InputDecoration(labelText: 'Status'),
             ),
 
-            const SizedBox(height: 10),
-
-            // DropdownButtonFormField(
-            //   value: produkValue,
-            //   items: const [
-            //     DropdownMenuItem(value: 'Tabungan', child: Text('Tabungan')),
-            //     DropdownMenuItem(value: 'Deposito', child: Text('Deposito')),
-            //     DropdownMenuItem(value: 'Kredit', child: Text('Kredit')),
-            //   ],
-            //   onChanged: (v) => setState(() => produkValue = v!),
-            //   decoration: const InputDecoration(labelText: 'Produk'),
-            // ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: produkController,
               decoration: const InputDecoration(labelText: 'Produk'),
             ),
 
-            const SizedBox(height: 10),
-            TextField(
-              controller: hasilController,
-              decoration: const InputDecoration(labelText: 'Hasil / Kendala'),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             TextField(
               controller: nominalController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Nominal'),
+            ),
+
+            const SizedBox(height: 12),
+            TextField(
+              controller: hasilController,
+              decoration: const InputDecoration(labelText: 'Hasil / Kendala'),
             ),
 
             const SizedBox(height: 16),
@@ -258,7 +190,7 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
                 Expanded(
                   child: Text(
                     rencanaKunjungan == null
-                        ? 'Rencana kunjungan'
+                        ? 'Rencana Kunjungan'
                         : DateFormat('dd/MM/yyyy').format(rencanaKunjungan!),
                   ),
                 ),
@@ -285,7 +217,7 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: submitReport,
-                child: Text(isEdit ? 'Update' : 'Submit'),
+                child: const Text('Submit'),
               ),
             ),
           ],
