@@ -30,7 +30,7 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
 
   List<Map<String, dynamic>> masterNasabah = [];
 
-  String statusValue = '=';
+  String statusValue = '';
   DateTime? rencanaKunjungan;
 
   File? foto;
@@ -183,7 +183,7 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
             DropdownButtonFormField(
               value: statusValue,
               items: const [
-                DropdownMenuItem(value: '-', child: Text('-')),
+                DropdownMenuItem(value: '', child: Text('')),
                 DropdownMenuItem(value: 'Follow Up', child: Text('Follow Up')),
                 DropdownMenuItem(value: 'Top Up', child: Text('Top Up')),
               ],
