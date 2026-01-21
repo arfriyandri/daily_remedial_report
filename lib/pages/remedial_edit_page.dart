@@ -30,7 +30,7 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
 
   List<Map<String, dynamic>> masterNasabah = [];
 
-  String statusValue = 'New';
+  String statusValue = '=';
   DateTime? rencanaKunjungan;
 
   File? foto;
@@ -136,7 +136,7 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Remedial Report')),
+      appBar: AppBar(title: Text('Tambah Lending Report')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -183,8 +183,8 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
             DropdownButtonFormField(
               value: statusValue,
               items: const [
-                DropdownMenuItem(value: 'New', child: Text('New')),
-                DropdownMenuItem(value: 'F.Up', child: Text('F.Up')),
+                DropdownMenuItem(value: '-', child: Text('-')),
+                DropdownMenuItem(value: 'Follow Up', child: Text('Follow Up')),
                 DropdownMenuItem(value: 'Top Up', child: Text('Top Up')),
               ],
               onChanged: (v) => setState(() => statusValue = v!),
@@ -194,7 +194,7 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
             const SizedBox(height: 12),
             TextField(
               controller: produkController,
-              decoration: const InputDecoration(labelText: 'Jenis Kredit'),
+              decoration: const InputDecoration(labelText: 'Kol/Jenis Kredit'),
             ),
             const SizedBox(height: 12),
             TextField(
