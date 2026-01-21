@@ -21,9 +21,14 @@ class RemedialFormPage extends StatefulWidget {
 class _RemedialFormPageState extends State<RemedialFormPage> {
   final namaController = TextEditingController();
   final alamatController = TextEditingController();
-  final nominalController = TextEditingController();
-  final hasilController = TextEditingController();
   final produkController = TextEditingController();
+  final nominalController = TextEditingController();
+  final pokokController = TextEditingController();
+  final bungaController = TextEditingController();
+  final setorController = TextEditingController();
+  final hasilController = TextEditingController();
+
+  List<Map<String, dynamic>> masterNasabah = [];
 
   String statusValue = 'New';
   DateTime? rencanaKunjungan;
@@ -31,17 +36,23 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
   File? foto;
   final picker = ImagePicker();
 
-  // =====================
-  // SIMPAN FOTO PERMANEN
-  // =====================
+  @override
+  void initState() {
+    super.initState();
+    loadMasterNasabah();
+  }
+
+  Future<void> loadMasterNasabah() async {
+    masterNasabah = await DBHelper().getMasterNasabah();
+    setState(() {});
+  }
+
   Future<String?> simpanFotoPermanen(File foto) async {
     final dir = await getApplicationDocumentsDirectory();
     final fileName =
         'foto_${DateTime.now().millisecondsSinceEpoch}${p.extension(foto.path)}';
     final newPath = p.join(dir.path, fileName);
-
-    final savedImage = await foto.copy(newPath);
-    return savedImage.path;
+    return (await foto.copy(newPath)).path;
   }
 
   Future<void> pilihTanggalKunjungan() async {
@@ -58,14 +69,9 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
 
   Future<void> ambilFoto() async {
     final XFile? image = await picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      setState(() => foto = File(image.path));
-    }
+    if (image != null) setState(() => foto = File(image.path));
   }
 
-  // =====================
-  // SUBMIT DATA (INSERT)
-  // =====================
   Future<void> submitReport() async {
     if (namaController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
@@ -86,9 +92,12 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
       namaRemedial: namaRemedial,
       namaNasabah: namaController.text,
       alamat: alamatController.text,
-      nominal: nominalController.text,
-      status: statusValue,
       produk: produkController.text,
+      nominal: nominalController.text,
+      pokok: pokokController.text,
+      bunga: bungaController.text,
+      setor: setorController.text,
+      status: statusValue,
       hasil: hasilController.text,
       rencanaKunjungan: rencanaKunjungan,
       fotoPath: fotoPath,
@@ -97,10 +106,6 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
     await DBHelper.insert(report);
 
     if (!mounted) return;
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
 
     Navigator.pushReplacement(
       context,
@@ -116,34 +121,46 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // =========================
-            // 🔍 AUTOCOMPLETE NASABAH
-            // =========================
-            Autocomplete<MasterNasabah>(
-              displayStringForOption: (e) => e.nama,
-              optionsBuilder: (value) async {
-                if (value.text.length < 2) {
-                  return const Iterable<MasterNasabah>.empty();
+            /// ==========================
+            /// 🔍 AUTOCOMPLETE NASABAH
+            /// ==========================
+            Autocomplete<Map<String, dynamic>>(
+              optionsBuilder: (TextEditingValue value) {
+                if (value.text.length < 1) {
+                  return const Iterable.empty();
                 }
-                return await DBHelper.searchNasabah(value.text);
+
+                return masterNasabah.where(
+                  (item) => item['nama'].toString().toLowerCase().contains(
+                    value.text.toLowerCase(),
+                  ),
+                );
               },
-              onSelected: (selected) {
-                namaController.text = selected.nama;
-                alamatController.text = selected.alamat;
-                nominalController.text = selected.nominal;
-                produkController.text = selected.produk;
-              },
+
+              displayStringForOption: (option) => option['nama'],
+
               fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-                return TextField(
+                return TextFormField(
                   controller: controller,
                   focusNode: focusNode,
                   decoration: const InputDecoration(
                     labelText: 'Nama Nasabah',
-                    border: OutlineInputBorder(),
-                    hintText: 'Cari atau input manual',
+                    hintText: 'Ketik nama nasabah',
                   ),
-                  onChanged: (v) => namaController.text = v,
+                  onChanged: (value) {
+                    // sinkron ke controller utama
+                    namaController.text = value;
+                  },
                 );
+              },
+
+              onSelected: (selected) {
+                namaController.text = selected['nama'];
+                alamatController.text = selected['alamat'] ?? '';
+                produkController.text = selected['produk'] ?? '';
+                nominalController.text = selected['nominal'] ?? '';
+                pokokController.text = selected['pokok'] ?? '';
+                bungaController.text = selected['bunga'] ?? '';
               },
             ),
 
@@ -168,14 +185,32 @@ class _RemedialFormPageState extends State<RemedialFormPage> {
             const SizedBox(height: 12),
             TextField(
               controller: produkController,
-              decoration: const InputDecoration(labelText: 'Produk'),
+              decoration: const InputDecoration(labelText: 'Jenis Kredit'),
             ),
 
             const SizedBox(height: 12),
             TextField(
               controller: nominalController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Nominal'),
+              decoration: const InputDecoration(labelText: 'Plafon'),
+            ),
+
+            TextField(
+              controller: pokokController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Pokok'),
+            ),
+
+            TextField(
+              controller: bungaController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Bunga'),
+            ),
+
+            TextField(
+              controller: setorController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Setor'),
             ),
 
             const SizedBox(height: 12),

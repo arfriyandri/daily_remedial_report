@@ -13,7 +13,6 @@ import 'remedial_edit_page.dart';
 
 import '../models/remedial_report_model.dart';
 import '../services/db_helper.dart';
-import '../services/excel_import_service.dart';
 
 class RemedialListPage extends StatefulWidget {
   const RemedialListPage({super.key});
@@ -92,9 +91,12 @@ class _RemedialListPageState extends State<RemedialListPage> {
         'No',
         'Nama Nasabah',
         'Alamat',
-        'Nominal',
         'Status',
-        'Produk',
+        'Tipe/Kol',
+        'Plafon',
+        'Pokok',
+        'Bunga',
+        'Setor',
         'Hasil',
         'Foto',
       ];
@@ -127,18 +129,30 @@ class _RemedialListPageState extends State<RemedialListPage> {
           ..cellStyle = cellStyle;
 
         sheet.getRangeByIndex(row, 4)
-          ..setText(e.nominal)
+          ..setText(e.status)
           ..cellStyle = nominalStyle;
 
         sheet.getRangeByIndex(row, 5)
-          ..setText(e.status)
-          ..cellStyle = cellStyle;
-
-        sheet.getRangeByIndex(row, 6)
           ..setText(e.produk)
           ..cellStyle = cellStyle;
 
+        sheet.getRangeByIndex(row, 6)
+          ..setText(e.nominal)
+          ..cellStyle = cellStyle;
+
         sheet.getRangeByIndex(row, 7)
+          ..setText(e.pokok)
+          ..cellStyle = cellStyle;
+
+        sheet.getRangeByIndex(row, 8)
+          ..setText(e.bunga)
+          ..cellStyle = cellStyle;
+
+        sheet.getRangeByIndex(row, 9)
+          ..setText(e.setor)
+          ..cellStyle = cellStyle;
+
+        sheet.getRangeByIndex(row, 10)
           ..setText(e.hasil)
           ..cellStyle = cellStyle;
 
@@ -146,11 +160,11 @@ class _RemedialListPageState extends State<RemedialListPage> {
         if (e.fotoPath != null && File(e.fotoPath!).existsSync()) {
           final resizedBytes = await resizeImageForExcel(e.fotoPath!);
 
-          sheet.getRangeByIndex(row, 8)
+          sheet.getRangeByIndex(row, 11)
             ..columnWidth = 12
             ..rowHeight = 70;
 
-          final picture = sheet.pictures.addStream(row, 8, resizedBytes);
+          final picture = sheet.pictures.addStream(row, 11, resizedBytes);
           picture
             ..width = 65
             ..height = 75;
@@ -244,25 +258,6 @@ class _RemedialListPageState extends State<RemedialListPage> {
               PopupMenuItem(value: 'preview', child: Text('Preview Excel')),
               PopupMenuItem(value: 'share', child: Text('Share Excel')),
             ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final namaRemedial =
-                  prefs.getString('nama_remedial') ?? 'Unknown';
-
-              final total = await ExcelImportService.importRemedialExcel(
-                namaRemedial: namaRemedial,
-              );
-
-              if (total > 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Berhasil import $total data')),
-                );
-                loadData();
-              }
-            },
           ),
         ],
       ),

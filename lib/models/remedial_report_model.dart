@@ -8,6 +8,9 @@ class RemedialReport {
   // 📄 DATA NASABAH
   final String alamat;
   final String nominal;
+  final String pokok;
+  final String bunga;
+  final String setor;
   final String status;
   final String produk;
   final String hasil;
@@ -25,6 +28,9 @@ class RemedialReport {
     required this.namaNasabah,
     required this.alamat,
     required this.nominal,
+    required this.pokok,
+    required this.bunga,
+    required this.setor,
     required this.status,
     required this.produk,
     required this.hasil,
@@ -43,6 +49,9 @@ class RemedialReport {
       'namaNasabah': namaNasabah,
       'alamat': alamat,
       'nominal': nominal,
+      'pokok': pokok,
+      'bunga': bunga,
+      'setor': setor,
       'status': status,
       'produk': produk,
       'hasil': hasil,
@@ -62,6 +71,9 @@ class RemedialReport {
       namaNasabah: map['namaNasabah'] ?? '',
       alamat: map['alamat'] ?? '',
       nominal: map['nominal'] ?? '',
+      pokok: map['pokok'] ?? '',
+      bunga: map['bunga'] ?? '',
+      setor: map['setor'] ?? '',
       status: map['status'] ?? '',
       produk: map['produk'] ?? '',
       hasil: map['hasil'] ?? '',

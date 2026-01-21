@@ -4,6 +4,9 @@ class MasterNasabah {
   final String alamat;
   final String produk;
   final String nominal;
+  final String pokok;
+  final String bunga;
+  final String setor;
 
   MasterNasabah({
     this.id,
@@ -11,6 +14,9 @@ class MasterNasabah {
     required this.alamat,
     required this.produk,
     required this.nominal,
+    this.pokok = '',
+    this.bunga = '',
+    this.setor = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +26,9 @@ class MasterNasabah {
       'alamat': alamat,
       'produk': produk,
       'nominal': nominal,
+      'pokok': pokok,
+      'bunga': bunga,
+      'setor': setor,
     };
   }
 
@@ -30,6 +39,9 @@ class MasterNasabah {
       alamat: map['alamat'],
       produk: map['produk'],
       nominal: map['nominal'],
+      pokok: map['pokok'] ?? '',
+      bunga: map['bunga'] ?? '',
+      setor: map['setor'] ?? '',
     );
   }
 }

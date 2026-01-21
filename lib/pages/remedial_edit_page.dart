@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/remedial_report_model.dart';
-import '../models/master_nasabah_model.dart';
 import '../services/db_helper.dart';
 import 'remedial_list_page.dart';
 
@@ -22,9 +21,14 @@ class RemedialEditPage extends StatefulWidget {
 class _RemedialEditPageState extends State<RemedialEditPage> {
   final namaController = TextEditingController();
   final alamatController = TextEditingController();
-  final nominalController = TextEditingController();
-  final hasilController = TextEditingController();
   final produkController = TextEditingController();
+  final nominalController = TextEditingController();
+  final pokokController = TextEditingController();
+  final bungaController = TextEditingController();
+  final setorController = TextEditingController();
+  final hasilController = TextEditingController();
+
+  List<Map<String, dynamic>> masterNasabah = [];
 
   String statusValue = 'New';
   DateTime? rencanaKunjungan;
@@ -32,17 +36,42 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
   File? foto;
   final picker = ImagePicker();
 
-  // =====================
-  // SIMPAN FOTO PERMANEN
-  // =====================
+  @override
+  void initState() {
+    super.initState();
+
+    final d = widget.data;
+
+    namaController.text = d.namaNasabah;
+    alamatController.text = d.alamat;
+    produkController.text = d.produk;
+    nominalController.text = d.nominal;
+    pokokController.text = d.pokok ?? '';
+    bungaController.text = d.bunga ?? '';
+    setorController.text = d.setor ?? '';
+    hasilController.text = d.hasil;
+
+    statusValue = d.status;
+    rencanaKunjungan = d.rencanaKunjungan;
+
+    if (d.fotoPath != null) {
+      foto = File(d.fotoPath!);
+    }
+
+    loadMasterNasabah();
+  }
+
+  Future<void> loadMasterNasabah() async {
+    masterNasabah = await DBHelper().getMasterNasabah();
+    setState(() {});
+  }
+
   Future<String?> simpanFotoPermanen(File foto) async {
     final dir = await getApplicationDocumentsDirectory();
     final fileName =
         'foto_${DateTime.now().millisecondsSinceEpoch}${p.extension(foto.path)}';
     final newPath = p.join(dir.path, fileName);
-
-    final savedImage = await foto.copy(newPath);
-    return savedImage.path;
+    return (await foto.copy(newPath)).path;
   }
 
   Future<void> pilihTanggalKunjungan() async {
@@ -64,9 +93,6 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
     }
   }
 
-  // =====================
-  // UPDATE DATA
-  // =====================
   Future<void> updateReport() async {
     if (namaController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
@@ -85,9 +111,12 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
       namaRemedial: widget.data.namaRemedial,
       namaNasabah: namaController.text,
       alamat: alamatController.text,
-      nominal: nominalController.text,
-      status: statusValue,
       produk: produkController.text,
+      nominal: nominalController.text,
+      pokok: pokokController.text,
+      bunga: bungaController.text,
+      setor: setorController.text,
+      status: statusValue,
       hasil: hasilController.text,
       tanggalLaporan: widget.data.tanggalLaporan,
       rencanaKunjungan: rencanaKunjungan,
@@ -98,32 +127,10 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Data berhasil diperbarui')));
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const RemedialListPage()),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    final d = widget.data;
-    namaController.text = d.namaNasabah;
-    alamatController.text = d.alamat;
-    nominalController.text = d.nominal;
-    hasilController.text = d.hasil;
-    produkController.text = d.produk;
-    statusValue = d.status;
-    rencanaKunjungan = d.rencanaKunjungan;
-
-    if (d.fotoPath != null) {
-      foto = File(d.fotoPath!);
-    }
   }
 
   @override
@@ -134,35 +141,35 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // =========================
-            // 🔍 AUTOCOMPLETE NASABAH
-            // =========================
-            Autocomplete<MasterNasabah>(
-              displayStringForOption: (e) => e.nama,
-              optionsBuilder: (value) async {
-                if (value.text.length < 2) {
-                  return const Iterable<MasterNasabah>.empty();
+            /// AUTOCOMPLETE NASABAH
+            Autocomplete<Map<String, dynamic>>(
+              optionsBuilder: (value) {
+                if (value.text.isEmpty) {
+                  return const Iterable.empty();
                 }
-                return await DBHelper.searchNasabah(value.text);
+                return masterNasabah.where(
+                  (item) => item['nama'].toString().toLowerCase().contains(
+                    value.text.toLowerCase(),
+                  ),
+                );
               },
-              onSelected: (selected) {
-                namaController.text = selected.nama;
-                alamatController.text = selected.alamat;
-                nominalController.text = selected.nominal;
-                produkController.text = selected.produk;
-              },
+              displayStringForOption: (option) => option['nama'],
               fieldViewBuilder: (context, controller, focusNode, onSubmit) {
                 controller.text = namaController.text;
-                return TextField(
+                return TextFormField(
                   controller: controller,
                   focusNode: focusNode,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Nasabah',
-                    border: OutlineInputBorder(),
-                    hintText: 'Cari atau ubah manual',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Nama Nasabah'),
                   onChanged: (v) => namaController.text = v,
                 );
+              },
+              onSelected: (selected) {
+                namaController.text = selected['nama'];
+                alamatController.text = selected['alamat'] ?? '';
+                produkController.text = selected['produk'] ?? '';
+                nominalController.text = selected['nominal'] ?? '';
+                pokokController.text = selected['pokok'] ?? '';
+                bungaController.text = selected['bunga'] ?? '';
               },
             ),
 
@@ -171,8 +178,8 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
               controller: alamatController,
               decoration: const InputDecoration(labelText: 'Alamat'),
             ),
-
             const SizedBox(height: 12),
+
             DropdownButtonFormField(
               value: statusValue,
               items: const [
@@ -187,14 +194,28 @@ class _RemedialEditPageState extends State<RemedialEditPage> {
             const SizedBox(height: 12),
             TextField(
               controller: produkController,
-              decoration: const InputDecoration(labelText: 'Produk'),
+              decoration: const InputDecoration(labelText: 'Jenis Kredit'),
             ),
-
             const SizedBox(height: 12),
             TextField(
               controller: nominalController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Nominal'),
+              decoration: const InputDecoration(labelText: 'Plafon'),
+            ),
+            TextField(
+              controller: pokokController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Pokok'),
+            ),
+            TextField(
+              controller: bungaController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Bunga'),
+            ),
+            TextField(
+              controller: setorController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Setor'),
             ),
 
             const SizedBox(height: 12),
